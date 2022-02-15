@@ -37,8 +37,8 @@ var config = {
     physics: {
         default: 'arcade',
         arcade: {
-            gravity: { y: 300 },
-            debug: true
+            gravity: { y: 2000 },
+            debug: false
         }
     },
     scene: {
@@ -54,11 +54,21 @@ var platforms;
 
 var player;
 var competitors = {};
+var kewDown;
 
 var cursors;
+var keyboard;
 
-var jumpHeight = -300;
 var that;
+
+
+//////////////////////////////
+var jumpCount = 0;
+var jumpAmount = 2;
+var jumpHeight = -750;
+var jumpSpeed = 500;
+var velX = 250;
+//////////////////////////////
 
 function launch(){
     let user = Moralis.User.current();
@@ -79,11 +89,11 @@ launch();
 async function preload ()
 {
     that = this;
-    this.load.image('background', 'assets/BG.png');
-    this.load.image('ground', 'assets/Tiles/Tile (2).png');
-    //this.load.image('comptetitor', 'assets/player.png');
+    this.load.image('background', './Game/assets/BG.png');
+    this.load.image('ground', './Game/assets/Tiles/Tile (2).png');
+    this.load.image('comptetitor', './Game/assets/player.png');
 
-/*
+
     // fetch player SVG
     const numericTraits = [1, 99, 99, 99, 1, 1]; // UI to change the traits
     const equippedWearables = [23,6,2,43,0,4,0,1,0,0,0,0,0,0,0,0];
@@ -92,20 +102,21 @@ async function preload ()
 
     const svgBlob = new Blob([rawSVG], {type:"image/svg+xml;charset=utf-8"})
     const url = URL.createObjectURL(svgBlob)
-    */
-    const url = 'assets/player.png';
+    
+    //const url = './Game/assets/player.png';
     
     this.load.image('player',url);
 
     /*this.load.on('filecomplete', function(){
 
-        initPlayer()
-    }, this);
-    this.load.start()*/
+        initPlayer();
+    }, this);*/
+    
+    this.load.start();
 }
 
 async function initPlayer(){
-    player = that.physics.add.sprite(500, 250, 'player').setScale(0.3).refreshBody();
+    player = that.physics.add.sprite(500, 250, 'player').setScale(0.2).refreshBody();
     player.setBounce(0.3);
     that.physics.add.collider(player, platforms);
 }
@@ -122,11 +133,12 @@ async function create ()
     platforms.create(600, 400, 'ground').setScale(0.5).refreshBody();
     platforms.create(665, 400, 'ground').setScale(0.5).refreshBody();
 
-    player = this.physics.add.sprite(500, 250, 'player').setScale(0.3).refreshBody();
-    player.setBounce(0.3);
+    player = this.physics.add.sprite(500, 250, 'comptetitor').setScale(0.2).refreshBody();
+    player.setBounce(0.1);
     this.physics.add.collider(player, platforms);
 
-    cursors = this.input.keyboard.createCursorKeys();
+    keyboard = this.input.keyboard;
+    cursors = keyboard.createCursorKeys();
 
 /*
     let user = Moralis.User.current();
@@ -138,7 +150,7 @@ async function create ()
             // if first time seeing
             if(competitors[plocation.get("player")] == undefined){
                 // create a sprite
-                competitors[plocation.get("player")] = this.add.image( plocation.get("x"), plocation.get("y"), 'comptetitor').setScale(0.3);
+                competitors[plocation.get("player")] = this.add.image( plocation.get("x"), plocation.get("y"), 'comptetitor').setScale(0.2);
             }
             else{
                 competitors[plocation.get("player")].x = plocation.get("x");
@@ -157,28 +169,38 @@ async function create ()
 // 60 times per second  - 60 frames per second
 async function update ()
 {
-    if(!player)
+    if(!player){
         return;
+    }
+
+    if (player.body.touching.down){
+        jumpCount = 0;
+    }
 
     // LOGIC
-    if (cursors.left.isDown)
-    {
-        player.setVelocityX(-160);
+    if (cursors.left.isDown){
+
+        player.setVelocityX(-velX);
+
     }
-    else if (cursors.right.isDown)
-    {
-        player.setVelocityX(160);
+    if (cursors.right.isDown){
+
+        player.setVelocityX(velX);
+
     }
-    else
-    {
+    if (!cursors.left.isDown && !cursors.right.isDown){
+
         player.setVelocityX(0);
+
     }
 
-    if (cursors.up.isDown && player.body.touching.down)
-    {
-        player.setVelocityY(jumpHeight);
+    if (keyboard.checkDown(cursors.up, jumpSpeed) && jumpCount < jumpAmount ){
+
+        player.setVelocityY(jumpHeight * (1-(jumpCount/10)));
+        jumpCount++;
+        
     }
-/*
+
     if(player.lastX!=player.x  || player.lastY!=player.y){
         //let user = Moralis.User.current();
 
@@ -194,7 +216,7 @@ async function update ()
 
         await playerPosition.save();
     }
-*/
+
 
 }
 
